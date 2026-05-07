@@ -169,5 +169,5 @@ Optional:
 ## Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/video-abstraction.git
+git clone https://github.com/Jay-salot-2210/Real-Time-Perceptual-Video-Abstraction-using-Edge-Aware-Filtering-and-Adaptive-Stylization/tree/main
 cd video-abstraction
