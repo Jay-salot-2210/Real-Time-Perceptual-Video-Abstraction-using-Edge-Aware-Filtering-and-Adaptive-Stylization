@@ -86,10 +86,19 @@ def soft_quantize_lab(image_lab, n_bins=8,
         L, lambda_phi, omega_phi, lambda_delta, omega_delta
     )
     
-    # Apply quantization pixel-wise using mean phi_q 
-    # (full pixel-wise would need loops; we use mean for speed)
-    phi_q_mean = float(phi_q_map.mean())
-    L_quantized = soft_quantize_channel(L, n_bins=n_bins, phi_q=phi_q_mean)
+    # Vectorized pixel-wise quantization using the full spatial phi_q map
+    c_min, c_max = L.min(), L.max()
+    if c_max - c_min < 1e-6:
+        result[:, :, 0] = L
+        return result
+
+    norm = (L - c_min) / (c_max - c_min)
+    delta_q = 1.0 / n_bins
+    bin_idx = np.clip(np.floor(norm * n_bins).astype(int), 0, n_bins - 1)
+    q_nearest = (bin_idx + 0.5) * delta_q
+    # Apply Eq. (6) with the spatially-varying phi_q_map at every pixel
+    L_quantized = q_nearest + (delta_q / 2.0) * np.tanh(phi_q_map * (norm - q_nearest))
+    L_quantized = L_quantized * (c_max - c_min) + c_min
     
     result[:, :, 0] = L_quantized
     return result

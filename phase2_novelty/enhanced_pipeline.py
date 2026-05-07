@@ -11,7 +11,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'phase1'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'phase1_paper_implementation'))
 
 from saliency_guided import saliency_guided_abstraction, compute_gradient_saliency, compute_color_opponency_saliency
 from adaptive_quantization import adaptive_kmeans_quantize, smooth_quantization_boundary
@@ -240,21 +240,24 @@ if __name__ == "__main__":
     import urllib.request
     
     # Ensure phase1 is accessible
-    phase1_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'phase1')
+    phase1_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'phase1_paper_implementation')
     sys.path.insert(0, phase1_dir)
     
     from pipeline import abstract_pipeline, visualize_pipeline, run_phase1_on_image
     
-    output_dir = "/home/claude/project/results"
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    output_dir = os.path.join(project_root, "results")
     os.makedirs(output_dir, exist_ok=True)
     
     # Download test image
-    test_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Bikesg.jpg/640px-Bikesg.jpg"
-    test_img_path = "/home/claude/project/results/test_input.jpg"
+    test_url = "https://raw.githubusercontent.com/opencv/opencv/master/samples/data/lena.jpg"
+    test_img_path = os.path.join(output_dir, "test_input.jpg")
     
     print("Downloading test image...")
     try:
-        urllib.request.urlretrieve(test_url, test_img_path)
+        req = urllib.request.Request(test_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response, open(test_img_path, 'wb') as out_file:
+            out_file.write(response.read())
         print("Downloaded.")
     except Exception as e:
         print(f"Download failed ({e}), using synthetic image.")

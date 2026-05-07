@@ -168,14 +168,17 @@ if __name__ == "__main__":
     import urllib.request
     
     # Download a test image (public domain)
-    test_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Bikesg.jpg/640px-Bikesg.jpg"
-    test_img_path = "/home/claude/project/results/test_input.jpg"
-    output_dir = "/home/claude/project/results"
+    test_url = "https://raw.githubusercontent.com/opencv/opencv/master/samples/data/lena.jpg"
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    output_dir = os.path.join(project_root, "results")
+    test_img_path = os.path.join(output_dir, "test_input.jpg")
     os.makedirs(output_dir, exist_ok=True)
     
     print("Downloading test image...")
     try:
-        urllib.request.urlretrieve(test_url, test_img_path)
+        req = urllib.request.Request(test_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response, open(test_img_path, 'wb') as out_file:
+            out_file.write(response.read())
         print("Downloaded test image.")
     except Exception as e:
         print(f"Download failed: {e}")
