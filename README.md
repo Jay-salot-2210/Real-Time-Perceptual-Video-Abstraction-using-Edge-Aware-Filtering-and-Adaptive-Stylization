@@ -112,10 +112,10 @@ Final Abstracted Output
 
 ---
 
-# Project Structure
+## Project Structure
 
+```text
 project/
-│
 ├── phase1_paper_implementation/
 │   ├── bilateral_abstraction.py
 │   ├── dog_edges.py
@@ -134,14 +134,14 @@ project/
 ├── results/
 │   ├── images/
 │   ├── videos/
-│   └── evaluation_metrics/
+│   └── metrics/
 │
 ├── report/
 │   └── report.tex
 │
 ├── README.md
 └── requirements.txt
-
+```
 ---
 
 # Technologies Used
