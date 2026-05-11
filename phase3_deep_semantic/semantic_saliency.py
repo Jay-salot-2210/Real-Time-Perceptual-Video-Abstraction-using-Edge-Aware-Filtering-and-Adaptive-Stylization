@@ -9,7 +9,6 @@ to focus on the semantic foreground and heavily abstract the background.
 
 import cv2
 import numpy as np
-
 def get_advanced_saliency(image_bgr):
     """
     Use OpenCV's Static Saliency (Fine Grained) to get a mask of the main subject.
