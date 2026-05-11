@@ -29,22 +29,60 @@ st.set_page_config(
 # Custom CSS for aesthetic styling
 st.markdown("""
     <style>
+    :root {
+        --ink: #1f2937;
+        --accent: #e07a5f;
+        --accent-2: #3d405b;
+        --panel: rgba(255, 255, 255, 0.82);
+        --panel-border: rgba(61, 64, 91, 0.16);
+    }
+    .stApp {
+        background:
+            radial-gradient(900px 450px at 8% -10%, rgba(224, 122, 95, 0.20), transparent 60%),
+            radial-gradient(900px 450px at 100% 0%, rgba(61, 64, 91, 0.18), transparent 62%),
+            linear-gradient(180deg, #fff9f4 0%, #f6efe7 52%, #f1ece7 100%);
+    }
     .main {
         padding: 2rem;
     }
-    .stTitle {
+    .stMarkdown h1 {
         font-size: 2.5rem;
         font-weight: bold;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(120deg, var(--accent-2) 0%, var(--accent) 90%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
     }
+    .stSidebar {
+        background: linear-gradient(180deg, #f8f1eb 0%, #f4ebe2 100%);
+    }
+    div[data-testid="stMetric"] {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 14px;
+        padding: 0.6rem 0.8rem;
+    }
+    div[data-testid="stFileUploader"] {
+        background: var(--panel);
+        border: 1px dashed rgba(224, 122, 95, 0.45);
+        border-radius: 12px;
+        padding: 0.5rem;
+    }
+    .stButton > button {
+        background: linear-gradient(120deg, #3d405b 0%, #2d3047 100%);
+        color: #fdfaf7;
+        border: none;
+        border-radius: 12px;
+    }
+    .stButton > button:hover {
+        filter: brightness(1.06);
+    }
     .info-box {
-        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-        border-left: 5px solid #667eea;
+        background: linear-gradient(135deg, rgba(61, 64, 91, 0.08) 0%, rgba(224, 122, 95, 0.13) 100%);
+        border-left: 5px solid var(--accent);
+        border: 1px solid var(--panel-border);
         padding: 1rem;
-        border-radius: 0.5rem;
+        border-radius: 0.75rem;
         margin: 1rem 0;
     }
     .result-container {
@@ -56,7 +94,7 @@ st.markdown("""
         font-size: 1.2rem;
         font-weight: 600;
         margin-top: 1rem;
-        color: #667eea;
+        color: var(--accent-2);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -264,6 +302,6 @@ st.markdown("""
     applying different levels of artistic abstraction to each. The result is a striking depth-of-field effect that makes your subject
     stand out while transforming the background into a stylized, cartoon-like representation.
     <br><br>
-    <strong>Research:</strong> Dhirubhai Ambani University | <strong>Advisor:</strong> Dr. Srimanta Mandal (IIT Mandi)
+    <strong>Research:</strong> Dhirubhai Ambani University
 </div>
 """, unsafe_allow_html=True)
