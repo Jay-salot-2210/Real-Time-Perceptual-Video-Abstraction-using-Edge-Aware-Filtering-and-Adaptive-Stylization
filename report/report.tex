@@ -19,16 +19,21 @@
 
 \author{
   \IEEEauthorblockN{Jay Salot}
-  \IEEEauthorblockA{\textit{Department of Computer Science}\\
+  \IEEEauthorblockA{\textit{MSc. Data Science}\\
   \textit{Dhirubhai Ambani University}\\
   Gandhinagar, India \\
-  22101xxx@daiict.ac.in}
+  202518029@dau.ac.in}
+  \and
+  \IEEEauthorblockN{Jinal Sasiya}
+  \IEEEauthorblockA{\textit{MSc. Data Science}\\
+  \textit{Dhirubhai Ambani University}\\
+  Gandhinagar, India \\
+  202518062@dau.ac.in}
 }
-
 \maketitle
 
 \begin{abstract}
-We implement and extend the real-time image abstraction pipeline of Winemöller et al. \cite{winemoller2006} (SIGGRAPH 2006), which produces perceptually simplified, cartoon-like representations of images using iterated bilateral filtering, Difference-of-Gaussians (DoG) edge detection, and soft color quantization. Our Phase 1 reproduces the paper's pipeline faithfully, including the gradient-adaptive sharpness control in the quantization step, which was previously only approximated. Our Phase 2 introduces two novel contributions: (1) a saliency-guided adaptive bilateral filter that varies the range sigma per pixel based on a combined gradient and color-opponency saliency map, and (2) data-driven adaptive k-means color quantization in full CIE Lab space, replacing the paper's fixed equidistant bins. Quantitative evaluation on a standard test image demonstrates that Phase 2 achieves 98.4\% color reduction compared to 19.4\% in Phase 1, with a modest and intentional decrease in PSNR (26.29 dB vs 33.31 dB) that reflects the stronger artistic abstraction.
+Abstract---We implement and extend the real-time image abstraction pipeline of Winemöller et al. \cite{winemoller2006} (SIGGRAPH 2006). Our Phase 1 reproduces the paper's pipeline faithfully, including the gradient-adaptive sharpness control in the quantization step. Our Phase 2 introduces two novel contributions: (1) a saliency-guided adaptive bilateral filter and (2) data-driven adaptive k-means color quantization in full CIE Lab space. Our Phase 3 further introduces a Semantic Focal Abstraction framework using Computer Vision static fine-grained saliency to semantically segment the foreground from the background, applying extreme abstraction to the background and high-fidelity stylization to the foreground. Quantitative evaluation and hyperparameter sweeping demonstrate that Phase 3 successfully creates a depth-of-field artistic effect, solving the failure modes of low-level saliency on highly textured backgrounds.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -140,25 +145,92 @@ The paper's equidistant bins on the $L$ channel are acknowledged to be "arbitrar
 \textbf{Advantage:} The clusters naturally align with the actual color distribution of the image, not an arbitrary grid. For the Lena test image, this reduces the effective palette from hundreds of Lab colors to exactly 8 perceptually chosen representatives, yielding 98.4\% color reduction.
 
 %--------------------------------------------------------------------
+\section{Phase 3: Semantic Focal Abstraction}
+%--------------------------------------------------------------------
+
+\subsection{Limitation of Low-Level Saliency}
+Phase 2 improves upon the original pipeline by using gradient and color-opponency saliency. However, highly textured backgrounds (e.g., grass, brick walls) produce high gradients, tricking the algorithm into preserving the background. To solve this, Phase 3 bridges classic Non-Photorealistic Rendering (NPR) with Computer Vision Semantic Saliency.
+
+\subsection{Semantic Saliency Map}
+We utilize OpenCV's \texttt{StaticSaliencyFineGrained} to identify the main subject of the scene independent of local texture. The continuous saliency map is thresholded using Otsu's binarization and smoothed with a Gaussian kernel ($\sigma = 10.0$) to create a clean, continuous semantic mask $M \in [0, 1]$, where $M=1$ is the foreground subject.
+
+\subsection{Semantic-Guided Abstraction and Quantization}
+Using $M$, we apply differing abstraction parameters to the foreground and background:
+
+\textbf{Foreground ($M \to 1$):} Preserved with gentle bilateral filtering ($\sigma_r = 2.0$), high color fidelity (k-means with $k=16$), and crisp DoG edges. This preserves important features like faces and skin tones.
+
+\textbf{Background ($M \to 0$):} Aggressively abstracted with heavy bilateral blurring ($\sigma_r = 10.0$), extreme color reduction ($k=4$), and suppressed DoG edges (reduced to 20\% opacity). 
+
+The result is a novel "depth-of-field" abstraction effect where the subject pops out as a detailed illustration against a flat, painterly background.
+
+\begin{table*}[t]
+\caption{Evolution of the Abstraction Pipeline Across Three Phases}
+\label{tab:phase_diff}
+\begin{center}
+\begin{tabular}{lp{4cm}p{4cm}p{4cm}}
+\toprule
+\textbf{Component} & \textbf{Phase 1 (Paper Baseline)} & \textbf{Phase 2 (Saliency-Guided)} & \textbf{Phase 3 (Semantic Focal)} \\
+\midrule
+\textbf{Bilateral Filtering} & Uniform (fixed $\sigma_r$ = 4.25) across entire image & Adaptive ($\sigma_r \in [2.0, 8.0]$ based on saliency) & Adaptive with extreme background blur ($\sigma_r=10.0$) \\
+\textbf{Saliency / Attention} & None (applies blindly) & Low-level (Gradients + Color Opponency) & High-level Semantic (OpenCV Fine-Grained Static Saliency) \\
+\textbf{Color Quantization} & Equidistant fixed bins (Luminance only) & Data-driven K-Means (full Lab color space) & Dual K-Means (16 colors for foreground, 4 for background) \\
+\textbf{DoG Edge Detection} & Uniform strength everywhere & Uniform strength everywhere & Modulated (strong on foreground, suppressed to 20\% on background) \\
+\textbf{Handling of Textures} & Fails to abstract heavily textured backgrounds & Fails (treats texture gradients as important edges) & Succeeds (ignores texture, focuses entirely on semantic subject) \\
+\textbf{Visual Effect} & Basic 2006 cartoon look & Cleaner posterization, faithful colors & Artistic "Depth-of-Field" illustration \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table*}
+
+%--------------------------------------------------------------------
+\section{Hyperparameter Tuning and Analysis}
+%--------------------------------------------------------------------
+We conducted a sweep across all three phases to justify parameter choices.
+
+\textbf{Phase 1 (Iterations and Bins):} Testing $n_{bilateral} \in \{2, 4, 8\}$ and bins $\in \{4, 8\}$, we found that 2 iterations left the image too photorealistic, while 8 iterations with 4 bins distorted structure. The paper's default (4 iterations, 8 bins) was confirmed as optimal (see Fig.~\ref{fig:hp_p1}).
+
+\begin{figure*}[t!]
+\centerline{\includegraphics[width=\textwidth]{hyperparam_phase1.png}}
+\caption{Phase 1 Hyperparameter Sweep. The middle column (4 iterations, 8 bins) shows the optimal balance, avoiding the photorealism of under-abstraction and the structural loss of over-abstraction.}
+\label{fig:hp_p1}
+\end{figure*}
+
+\textbf{Phase 2 (K-Means Colors and Weights):} We varied $k \in \{4, 8, 16\}$ and the gradient/color weights. $k=4$ with high gradient emphasis preserved too much noise in textures, while $k=16$ defeated the purpose of abstraction. $k=8$ with slightly higher gradient weight ($w_g=0.6$) provided the best structural cartoon effect (see Fig.~\ref{fig:hp_p2}).
+
+\begin{figure*}[t!]
+\centerline{\includegraphics[width=\textwidth]{hyperparam_phase2.png}}
+\caption{Phase 2 Hyperparameter Sweep. The middle column ($k=8$) provides the best stylized look, whereas $k=4$ appears too stark and $k=16$ lacks abstraction.}
+\label{fig:hp_p2}
+\end{figure*}
+
+\textbf{Phase 3 (Semantic Isolation):} We varied background blur ($\sigma_r^{bg} \in \{6, 10, 20\}$) and color counts. At $\sigma_r^{bg}=20$ and $k_{bg}=2$, the background collapsed into a flat green-screen effect, looking disconnected. $\sigma_r^{bg}=10$, $k_{fg}=16$, and $k_{bg}=4$ provided the most aesthetically pleasing depth-of-field contrast (see Fig.~\ref{fig:hp_p3}).
+
+\begin{figure*}[t!]
+\centerline{\includegraphics[width=\textwidth]{hyperparam_phase3.png}}
+\caption{Phase 3 Hyperparameter Sweep. The middle column achieves a perfect focal contrast, while the rightmost column creates an unnatural isolation.}
+\label{fig:hp_p3}
+\end{figure*}
+
+%--------------------------------------------------------------------
 \section{Results}
 %--------------------------------------------------------------------
 
 \subsection{Quantitative Evaluation}
 
-We evaluate on the standard Lena (512×512) test image. Table~\ref{tab:metrics} shows the quantitative comparison.
+We evaluate on the standard OpenCV ``messi5'' test image. Table~\ref{tab:metrics} shows the quantitative comparison.
 
 \begin{table}[h]
-\caption{Quantitative Comparison on Lena Image}
+\caption{Quantitative Comparison on Messi Image}
 \label{tab:metrics}
 \begin{center}
 \begin{tabular}{lcc}
 \toprule
 \textbf{Metric} & \textbf{Phase 1 (Paper)} & \textbf{Phase 2 (Ours)} \\
 \midrule
-PSNR (dB)         & 33.31 & 26.29 \\
-SSIM              & 0.9954 & 0.9840 \\
-Color Reduction (\%) & 19.4 & \textbf{98.4} \\
-Edge Preservation & \textbf{0.8803} & 0.7583 \\
+PSNR (dB)         & 33.60 & 22.65 \\
+SSIM              & 0.9960 & 0.9751 \\
+Color Reduction (\%) & 19.8 & \textbf{99.1} \\
+Edge Preservation & \textbf{0.6537} & 0.4935 \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -166,11 +238,27 @@ Edge Preservation & \textbf{0.8803} & 0.7583 \\
 
 \subsection{Analysis}
 
-Phase 2 achieves dramatically stronger color abstraction (98.4\% vs 19.4\%) at the cost of pixel-level fidelity (PSNR 26.29 vs 33.31). This trade-off is intentional: the k-means palette quantization reduces the image to a clean 8-color poster-like representation, which is the desired artistic output. The lower PSNR simply reflects that we are further from the original, not that the output is worse—it is more abstracted.
+Phase 2 achieves dramatically stronger color abstraction (99.1\% vs 19.8\%) at the cost of pixel-level fidelity (PSNR 22.65 vs 33.60). This trade-off is intentional: the k-means palette quantization reduces the image to a clean 8-color poster-like representation, which is the desired artistic output. The lower PSNR simply reflects that we are further from the original, not that the output is worse—it is more abstracted.
 
-Edge preservation decreases slightly (0.76 vs 0.88) because extreme color quantization eliminates some subtle gradient-based "edges" that are artifacts of smooth color gradients rather than true structural boundaries.
+Edge preservation decreases (0.49 vs 0.65) because extreme color quantization eliminates some subtle gradient-based "edges" that are artifacts of smooth color gradients rather than true structural boundaries.
 
-SSIM remains high (0.984) indicating that the structural content—object boundaries, spatial layout—is well preserved despite the stronger stylization.
+SSIM remains high (0.975) indicating that the structural content—object boundaries, spatial layout—is well preserved despite the stronger stylization.
+
+\subsection{Visual Comparisons}
+
+To illustrate the qualitative progression across the three phases, we generated side-by-side visual comparisons using the OpenCV ``messi5'' sample image, which features a strong foreground subject against a highly textured background (see Figures~\ref{fig:p1_vs_p2} and \ref{fig:p2_vs_p3}).
+
+\begin{figure*}[t!]
+\centerline{\includegraphics[width=\textwidth]{comparison_1_P1_vs_P2.png}}
+\caption{Phase 1 vs Phase 2: The transition from uniform, arbitrary quantization to saliency-guided, data-driven abstraction. Phase 1 leaves the image looking cluttered with limited color reduction, while Phase 2 produces a much cleaner, more faithful posterization effect.}
+\label{fig:p1_vs_p2}
+\end{figure*}
+
+\begin{figure*}[t!]
+\centerline{\includegraphics[width=\textwidth]{comparison_2_P2_vs_P3.png}}
+\caption{Phase 2 vs Phase 3: Solving the texture problem. Phase 2's gradient-based saliency is tricked by the high-texture background (grass/crowd), mistakenly preserving it. Phase 3 uses a semantic mask to completely ignore local texture, isolating the subject. By heavily abstracting the background while preserving the foreground, Phase 3 achieves a striking depth-of-field artistic effect.}
+\label{fig:p2_vs_p3}
+\end{figure*}
 
 %--------------------------------------------------------------------
 \section{Discussion}
@@ -193,13 +281,13 @@ Both contributions require no special hardware or deep networks, maintaining the
 
 \subsection{Limitations}
 
-The saliency computation is based on low-level cues only (gradients, color opponency). Semantic saliency—knowing that a face is more important than a chair regardless of gradient—would require a learned model (e.g., a CNN saliency predictor). This is left as future work.
+While Phase 3 successfully introduces semantic focal abstraction, it relies on static computer vision saliency (OpenCV Fine-Grained Saliency), which works exceptionally well for prominent, centered subjects. For extremely complex multi-subject scenes, moving towards an explicit deep learning segmentation model (e.g., Mask R-CNN or MediaPipe) could provide even finer control, though this would trade off the real-time, low-compute spirit of the original pipeline.
 
 %--------------------------------------------------------------------
 \section{Conclusion}
 %--------------------------------------------------------------------
 
-We have implemented and quantitatively evaluated the full pipeline from Winemöller et al.~\cite{winemoller2006}, correcting an approximation in the soft quantization step, and extended it with two novel contributions: saliency-guided adaptive bilateral filtering and data-driven Lab-space k-means color quantization. Phase 2 produces a 98.4\% color reduction with strong artistic abstraction, compared to 19.4\% in the original pipeline. Both phases are implemented entirely in Python using OpenCV and scikit-learn, with all results reproducible from the provided code.
+We have implemented and quantitatively evaluated the full pipeline from Winemöller et al.~\cite{winemoller2006}, correcting an approximation in the soft quantization step, and extended it with two novel contributions: saliency-guided adaptive bilateral filtering and data-driven Lab-space k-means color quantization. Phase 2 produces a 99.1\% color reduction with strong artistic abstraction, compared to 19.8\% in the original pipeline. Phase 3 successfully introduces semantic focal abstraction to handle heavily textured scenes. All phases are implemented entirely in Python using OpenCV, with all results reproducible from the provided code.
 
 %--------------------------------------------------------------------
 \begin{thebibliography}{00}
