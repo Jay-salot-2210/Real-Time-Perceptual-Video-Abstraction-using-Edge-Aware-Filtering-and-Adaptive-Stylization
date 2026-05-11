@@ -9,12 +9,10 @@ font = "sans serif"
 showErrorDetails = false
 showSidebarNavigation = true
 
+toolbarMode = "minimal"
+
 [logger]
 level = "info"
-
-[client.toolbarMode]
-# Always show toolbar to allow reruns
-mode = "minimal"
 
 [server]
 maxUploadSize = 200
