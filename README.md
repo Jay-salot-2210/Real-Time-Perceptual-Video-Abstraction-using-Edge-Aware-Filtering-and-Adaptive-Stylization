@@ -1,173 +1,154 @@
-# Real-Time Perceptual Video Abstraction using Edge-Aware Filtering and Adaptive Stylization
+# Real-Time Perceptual Video Abstraction Using Edge-Aware Filtering and Adaptive Stylization
 
-## Overview
+A multi-phase implementation and extension of Winnemoller et al. (SIGGRAPH 2006) for artistic, perceptually meaningful image abstraction.
 
-This project implements and extends the paper:
+## Live Web App
+- Streamlit app: https://real-time-perceptual-video-abstraction.streamlit.app/
 
-> Winnemöller, H., Olsen, S. C., & Gooch, B. (2006)
-> "Real-Time Video Abstraction"
+## Project Summary
+This project starts from the original paper pipeline and then extends it with saliency- and semantic-guided abstraction.
 
-The system transforms real-world videos into perceptually simplified and stylized representations while preserving important visual structures such as edges, object boundaries, and facial features.
+- Phase 1: Paper-faithful abstraction pipeline
+- Phase 2: Novel saliency-guided abstraction and adaptive quantization
+- Phase 3: Semantic focal abstraction for stronger foreground/background style control
 
-The project focuses on:
-- Real-time abstraction
-- Edge-preserving smoothing
-- Cartoon-like stylization
-- Temporal stability in video
-- Enhanced perceptual clarity
+Primary goals:
+- Preserve important structure (subject boundaries, dominant edges)
+- Remove perceptual clutter (background texture/noise)
+- Produce controllable stylized output with quantitative and qualitative evaluation
 
-The implementation is divided into two phases:
-1. Reproduction of the original paper pipeline
-2. Novel improvements and extensions
+## Visual Results
 
----
+### Phase Progression
+![Phase 1 vs Phase 2](results/comparison_1_P1_vs_P2.png)
 
-# Motivation
+![Phase 2 vs Phase 3](results/comparison_2_P2_vs_P3.png)
 
-Natural images contain excessive fine texture, noise, and visual clutter that may reduce perceptual clarity in low-bandwidth transmission, fast recognition, or memory-oriented tasks.
+### Hyperparameter Sweeps
+![Phase 1 Hyperparameters](report/hyperparam_phase1.png)
 
-This project explores how visual abstraction can:
-- Reduce unnecessary detail
-- Preserve semantic structures
-- Improve visual perception
-- Create temporally stable stylized videos
+![Phase 2 Hyperparameters](report/hyperparam_phase2.png)
 
-Applications include:
-- Low-bandwidth video streaming
-- Artistic video rendering
-- AR/VR preprocessing
-- Perception enhancement systems
-- Mobile graphics optimization
-- Cartoon and animation filters
+![Phase 3 Hyperparameters](report/hyperparam_phase3.png)
 
----
+## Phase-Wise Method
 
-# Features
+### Phase 1: Paper Implementation
+- Iterative bilateral abstraction in Lab color space
+- Difference-of-Gaussians edge extraction
+- Soft color quantization
+- Stylized edge overlay
 
-## Phase 1 — Paper Implementation
+Output: faithful baseline matching the original method behavior.
 
-### 1. Bilateral Filtering
-- Edge-preserving smoothing
-- Iterative abstraction
-- Mimics anisotropic diffusion
-- Removes texture while preserving boundaries
+### Phase 2: Novelty Layer
+- Saliency-guided adaptive bilateral filtering
+- Adaptive K-means quantization in Lab
+- Better control over detail preservation vs simplification
 
-### 2. Difference-of-Gaussians (DoG) Edge Enhancement
-- Enhances visually important edges
-- Retina-inspired edge detection
-- Produces stylized contours
+Output: cleaner and more controllable stylization than fixed uniform processing.
 
-### 3. Soft Color Quantization
-- Reduces color complexity
-- Produces cartoon-like appearance
-- Maintains temporal stability
+### Phase 3: Deep Semantic Layer
+- Semantic saliency mask for subject-aware processing
+- Separate foreground/background abstraction strengths
+- Strong focal effect for visual emphasis on the subject
 
-### 4. Real-Time Video Processing
-- Frame-by-frame abstraction
-- Live webcam or video input support
-- Optimized using OpenCV
+Output: improved subject prominence and cinematic abstraction style.
 
----
-
-## Phase 2 — Proposed Improvements
-
-### 1. Adaptive Quantization
-- K-means based dynamic color clustering
-- Better scene adaptation
-- Improved stylization quality
-
-### 2. Saliency-Guided Abstraction
-- Uses gradient magnitude maps
-- Preserves perceptually important regions
-- Better edge awareness
-
-### 3. Enhanced Edge Detection
-Optional:
-- Holistically-Nested Edge Detection (HED)
-- Cleaner contours
-- Better object boundary extraction
-
-### 4. Quantitative Evaluation
-Evaluation metrics include:
-- SSIM (Structural Similarity Index)
-- PSNR (Peak Signal-to-Noise Ratio)
-- Processing FPS
-- Edge preservation score
-
----
-
-# System Architecture
-
-Input Video/Image
-        ↓
-Bilateral Filtering
-        ↓
-Difference-of-Gaussians Edge Extraction
-        ↓
-Color Quantization
-        ↓
-Saliency Enhancement (Phase 2)
-        ↓
-Final Abstracted Output
-
----
-
-## Project Structure
-
+## Repository Structure
 ```text
-project/
-├── phase1_paper_implementation/
-│   ├── bilateral_abstraction.py
-│   ├── dog_edges.py
-│   ├── soft_quantization.py
-│   └── pipeline.py
-│
-├── phase2_novelty/
-│   ├── adaptive_quantization.py
-│   ├── saliency_guided.py
-│   └── enhanced_pipeline.py
-│
-├── datasets/
-│   ├── input_videos/
-│   └── sample_images/
-│
-├── results/
-│   ├── images/
-│   ├── videos/
-│   └── metrics/
-│
-├── report/
-│   └── report.tex
-│
-├── README.md
-└── requirements.txt
+.
+|-- app.py
+|-- generate_final_comparisons.py
+|-- generate_hyperparam_comparisons.py
+|-- run_experiments.py
+|-- requirements.txt
+|-- phase1_paper_implementation/
+|   |-- bilateral_abstraction.py
+|   |-- dog_edges.py
+|   |-- pipeline.py
+|   `-- soft_quantization.py
+|-- phase2_novelty/
+|   |-- adaptive_quantization.py
+|   |-- enhanced_pipeline.py
+|   `-- saliency_guided.py
+|-- phase3_deep_semantic/
+|   |-- semantic_pipeline.py
+|   `-- semantic_saliency.py
+|-- report/
+|   `-- report.tex
+`-- results/
+    |-- comparison_1_P1_vs_P2.png
+    |-- comparison_2_P2_vs_P3.png
+    `-- experiments/
 ```
----
 
-# Technologies Used
-
-## Programming Language
-- Python 3.10+
-
-## Libraries
-- OpenCV
-- NumPy
-- SciPy
-- scikit-image
-- scikit-learn
-- matplotlib
-- imutils
-
-Optional:
-- PyTorch
-- OpenCV DNN module
-
----
-
-# Installation
-
-## Clone Repository
-
+## Installation
 ```bash
-git clone https://github.com/Jay-salot-2210/Real-Time-Perceptual-Video-Abstraction-using-Edge-Aware-Filtering-and-Adaptive-Stylization/tree/main
-cd video-abstraction
+git clone https://github.com/Jay-salot-2210/Real-Time-Perceptual-Video-Abstraction-using-Edge-Aware-Filtering-and-Adaptive-Stylization.git
+cd Real-Time-Perceptual-Video-Abstraction-using-Edge-Aware-Filtering-and-Adaptive-Stylization
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+## Run Locally
+
+### 1) Streamlit Web App
+```bash
+streamlit run app.py
+```
+
+### 2) Regenerate Main Comparison Figures
+```bash
+python generate_final_comparisons.py
+```
+
+### 3) Regenerate Hyperparameter Sweep Figures
+```bash
+python generate_hyperparam_comparisons.py
+```
+
+### 4) Run Experiment Script
+```bash
+python run_experiments.py
+```
+
+## Web App Controls (What Each Slider Does)
+- Iterations: more passes means stronger abstraction and flatter regions
+- Spatial Sigma (sigma_d): larger neighborhood smoothing influence
+- Foreground Detail (sigma_r_fg): lower values preserve subject texture/details
+- Background Blur (sigma_r_bg): higher values simplify background aggressively
+- Foreground Colors (k_fg): larger values keep more subject color richness
+- Background Colors (k_bg): lower values create stronger posterized backgrounds
+- Edge Sigma (sigma_e): controls edge scale/coarseness
+- Foreground Edge Strength: outline strength on subject
+- Background Edge Strength: outline strength on background
+
+## Applications
+- Creative photo and video stylization
+- AR/VR pre-processing for scene simplification
+- Bandwidth-conscious visual communication
+- Pre-attentive visualization (focus guidance)
+- Educational demos for edge-preserving filtering and NPR
+
+## Quantitative Evaluation
+Metrics used in this project include:
+- PSNR
+- SSIM
+- Runtime/performance observations
+- Visual qualitative analysis across parameter sweeps
+
+## Deployment Notes
+This project uses `opencv-contrib-python-headless` in `requirements.txt` to support:
+- `cv2.saliency` module availability
+- Linux cloud deployment without GUI/OpenGL system dependency issues
+
+## Report
+Detailed methodology, experiments, and analysis are in:
+- `report/report.tex`
+
+## Reference
+Winnemoller, H., Olsen, S. C., and Gooch, B. (2006).
+Real-Time Video Abstraction.
+ACM SIGGRAPH.
